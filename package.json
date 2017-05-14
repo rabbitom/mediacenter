@@ -1,0 +1,13 @@
+{
+  "name": "rarbg",
+  "version": "1.0.0",
+  "description": "a test of torrentapi",
+  "main": "index.js",
+  "scripts": {
+    "info": "node index.js",
+    "link": "node index.js | sed -n -f parse-download-link.sed"
+  },
+  "dependencies": {
+    "torrentapi-wrapper": "0.0.2"
+  }
+}
