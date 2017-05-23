@@ -3,13 +3,18 @@ const fs = require('fs');
 const readline = require('readline');
 
 if(process.argv.length < 5) {
-    console.log('Shift time stamp of ass subtitle files.\nUsage: sub-shift.js <source> <target> <shift-time>\nThe shift-time should be in milliseconds, use negative value to move subtitles earlier and positive value for later.');
+    console.log('Shift time stamp of ass subtitle files.\nUsage: sub-shift.js <source> <target> <shift-time> [--no-trim]\nThe shift-time should be in milliseconds, use negative value to move subtitles earlier and positive value for later. Will delete dialogues if shifted start time is before 0:00:00, use --no-trim to keep them at the beginning.');
     process.exit(1);
 }
 
 var subfile = process.argv[2];
 var outfile = process.argv[3];
 var shift = parseInt(process.argv[4]);//-50253;
+var trim = true;
+if(process.argv.length > 5) {
+    if(process.argv[5] == '--no-trim')
+        trim = false;
+}
 
 const rl = readline.createInterface({
     input: fs.createReadStream(subfile)
@@ -20,29 +25,22 @@ var os = fs.createWriteStream(outfile);
 rl.on('line', (line)=>{
     if(line.match(/^Dialogue/)) {
         var parts = line.split(',');
-        replaceTime(parts, 1, shift);
-        replaceTime(parts, 2, shift);
-        // var start = parseTime(parts[1]) + shift;
-        // parts[1] = timeString(start);
-        // var end = parseTime(parts[2]) + shift;
-        // parts[2] = timeString(end);
+        var start = parseTime(parts[1]) + shift;
+        if(start < 0) {
+            if(trim)
+                return;
+            else
+                start = 0;
+        }
+        parts[1] = timeString(start);
+        var end = parseTime(parts[2]) + shift;
+        parts[2] = timeString(end);
         os.write(parts.join(','));
     }
     else
         os.write(line);
     os.write('\n');
 });
-
-function replaceTime(parts, index, shift) {
-    var str = parts[index];
-    var time = parseTime(str);
-    var timeShifted = time + shift;
-    if(timeShifted < 0)
-        timeShifted = 0;
-    var strShifted = timeString(timeShifted);
-    console.log(`${str} -> ${strShifted}`);
-    parts[index] = strShifted;
-}
 
 function parseTime(str) {
     //var str ="0:14:31.02";
